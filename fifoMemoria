@@ -1,0 +1,137 @@
+#include<iostream>
+using namespace std;
+
+#define MAX_FRAME 10 // Máximo número de marcos de página en la memoria física
+#define MAX_PAGINAS 100 // Máximo número total de páginas en la memoria virtual
+#define MAX_STRING 100 // Máximo número de páginas en el arreglo de strings
+
+int memoriaFisica[MAX_FRAME]; 
+int memoriaVirtual[MAX_PAGINAS]; 
+//int memoriaFisica[MAX_FRAME] = { -1 };
+int punteroFIFO = 0; 
+double hits = 0; 
+double faults = 0; 
+
+void inicializarMemoria(int frame,int paginas) {
+    for (int i = 0; i < frame; i++) {
+        memoriaFisica[i] = -1; // memoria física con -1 (sin páginas)
+    }
+    for (int i = 0; i < paginas; i++) {
+        memoriaVirtual[i] = i; // Inicializamos la memoria virtual con páginas numeradas
+    }
+}
+
+bool llenaMemoriaFisica(int frame) {
+    for (int i = 0; i < frame; i++) {
+        if (memoriaFisica[i] == -1) {
+            return false; // Todavía hay espacio en la memoria física
+        }
+    }
+    return true; // La memoria física está llena
+}
+
+bool paginaEnMemoriaFisica(int pagina, int frame) {
+    for (int i = 0; i < frame; i++) {
+        if (memoriaFisica[i] == pagina) {
+            return true; // La página está en la memoria física
+        }
+    }
+    return false; // La página no está en la memoria física
+}
+
+int reemplazarPaginaFIFO(int nuevaPagina, int frame) {
+    int paginaReemplazada = memoriaFisica[punteroFIFO]; // Obtenemos la página a reemplazar según FIFO
+    
+    memoriaFisica[punteroFIFO] = nuevaPagina; // Reemplazamos la página
+    punteroFIFO = (punteroFIFO + 1) % frame; // Movemos el puntero FIFO circularmente
+    return paginaReemplazada; // Devolvemos la página reemplazada
+}
+
+
+void imprimirMemoriaFisica(int frame) {
+    for (int i = 0; i < frame; i++) {
+        cout << "Marco " << i << ": ";
+        if (memoriaFisica[i] == -1) {
+            cout << "Vacío" << endl;
+        } else {
+            cout << "Página " << memoriaFisica[i] <<endl;
+        }
+    }
+}
+
+void pageHit() {
+
+    hits++;
+}
+
+void pagedeFault() {
+    
+    faults++;
+}
+
+int main() {
+    int frame = 0; 
+    int paginas = 0;
+    int numstring = paginas; 
+    cout << "Ingrese el número de marcos de página en la memoria física: ";
+    cin >> frame;
+
+    cout << "Ingrese el número total de páginas en la memoria virtual: ";
+    cin >> paginas;
+	numstring=paginas;
+    // Validar que los valores de frame y paginas no excedan los máximos
+    if (frame > MAX_FRAME || paginas > MAX_PAGINAS || numstring > MAX_STRING) {
+        cout << "Los valores ingresados son demasiado grandes. Asegúrese de que no excedan los límites." << endl;
+        return 1;
+    }
+
+    // Simulación de acceso a páginas
+    int string[MAX_STRING];
+
+   cout << "Ingrese las páginas para la simulación separadas por espacios: "<<endl;
+    for (int i = 0; i < numstring; i++) {
+    	cout << "Ingrese la pagina"<<i+1<<endl;
+        cin >> string[i];
+    }
+
+  inicializarMemoria(frame, paginas);
+	
+
+    for (int i = 0; i < numstring; i++) {
+        int pagina = string[i];
+        if (paginaEnMemoriaFisica(pagina, frame)) {
+            cout << "  " << endl;
+            pageHit();
+        } else {
+            cout << "  " << endl;
+            pagedeFault();
+            if (llenaMemoriaFisica(frame)) {
+                int paginaReemplazada = reemplazarPaginaFIFO(pagina, frame);
+                cout << " " << endl;
+                cout << "Se reemplazó la página " << paginaReemplazada << " con la página " << pagina << endl;
+            } else {
+                for (int j = 0; j < frame; j++) {
+                    if (memoriaFisica[j] == -1) {
+                        memoriaFisica[j] = pagina;
+                        break;
+                    }
+                }
+            }
+        }
+        cout << "  "<<endl;
+        
+        
+        imprimirMemoriaFisica(frame);
+    }
+
+    float Pagemiss = ((faults) / numstring) * 100;
+    float HitRATIO = ((hits) / numstring) * 100;
+    cout << "                  "<< endl;
+    cout << "Total Page Hits: " << hits << endl;
+    cout << "Total Page Faults: " << faults << endl;
+    cout << "HIT RATIO: " << HitRATIO << "%" << endl;
+    cout << "Page Miss: " << Pagemiss << "%" << endl;
+    cout << punteroFIFO;
+
+    return 0;
+}
